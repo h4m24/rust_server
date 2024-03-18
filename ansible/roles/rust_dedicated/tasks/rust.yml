@@ -1,0 +1,39 @@
+
+- name: Create Rust update script
+  copy:
+    content: |
+      force_install_dir "{{ rust_install_dir }}"  # Using the variable
+      login anonymous
+      app_update 258550
+      quit
+    dest: "{{ rust_script_path }}"
+    mode: 0755 
+
+- name: Execute Rust update script via SteamCMD
+  shell: "/usr/games/steamcmd +runscript {{ rust_script_path }}"
+
+- name: Create startust.sh file
+  copy:
+    dest: "{{rust_install_dir}}/startrust.sh"
+    mode: 0755
+    content: |
+      #!/bin/sh
+      clear while : do
+        exec ./RustDedicated -batchmode -nographics \
+        -server.ip {{ rust_server_ip }} \
+        -server.port {{ rust_server_port }} \
+        -rcon.ip {{ rust_rcon_ip }} \
+        -rcon.port {{ rust_rcon_port }} \
+        -rcon.password "{{ rust_rcon_password }}" \
+        -server.maxplayers {{ rust_max_players }} \
+        -server.hostname "{{ rust_server_hostname }}" \
+        -server.identity "{{ rust_server_identity }}" \
+        -server.level "Procedural Map" \
+        -server.seed {{ rust_server_seed }} \
+        -server.worldsize {{ rust_world_size }} \
+        -server.saveinterval {{ rust_save_interval }} \
+        -server.globalchat {{ rust_global_chat }} \
+        -server.description "{{ rust_description }}" \
+        -server.headerimage "{{ rust_header_image }}" \
+        -server.url "{{ rust_website }}"
+        echo "\nRestarting server...\n" done

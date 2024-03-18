@@ -1,0 +1,30 @@
+
+# performance tuning
+- name: Set vm.swappiness to 10
+  sysctl:
+    name: vm.swappiness
+    value: 10
+    state: present
+    reload: yes 
+
+- name: Increase file descriptor limits
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: '* soft nofile 65536'
+    create: yes
+# doesnt work
+# - name: Set CPU governor to performance 
+#   shell: cpupower frequency-set -g performance
+
+
+- name: Optimize network settings
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes 
+  with_dict:
+    net.core.rmem_max: 16777216
+    net.core.wmem_max: 16777216
+    net.ipv4.tcp_rmem: 4096 87380 16777216
+    net.ipv4.tcp_wmem: 4096 65536 16777216

@@ -1,0 +1,25 @@
+
+- name: Add Ubuntu multiverse repository
+  apt_repository:
+    repo: 'deb http://archive.ubuntu.com/ubuntu focal multiverse'
+    state: present
+    update_cache: yes
+
+- name: Add i386 architecture
+  become: true
+  command: dpkg --add-architecture i386
+
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install lib32gcc1 package
+  become: true
+  apt:
+    name: lib32gcc1
+    state: present
+
+- name: Run dpkg-reconfigure (requires privilege escalation)
+  become: true
+  shell: dpkg-reconfigure debconf -f noninteractive -p critical && sudo dpkg --configure -a

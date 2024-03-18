@@ -1,0 +1,31 @@
+
+- name: Install iptables-persistent (if necessary)
+  apt: 
+    name: iptables-persistent
+    state: present
+    update_cache: yes  # Ensure package lists are updated
+
+- name: Flush existing iptables rules
+  shell: iptables -F
+
+- name: Set default INPUT and OUTPUT policies to ACCEPT
+  shell: |
+    iptables -P INPUT ACCEPT
+    iptables -P OUTPUT ACCEPT
+
+- name: Allow established and related connections
+  shell: iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+- name: Allow incoming SSH connections (port 22)
+  shell: iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+- name: Allow incoming Rust server connections
+  shell: |
+    iptables -A INPUT -p tcp --dport 28016 -j ACCEPT
+    iptables -A INPUT -p udp --dport 28015 -j ACCEPT
+
+- name: Allow loopback interface
+  shell: iptables -A INPUT -i lo -j ACCEPT
+
+- name: Set default policy to DROP 
+  shell: iptables -A INPUT -j DROP
