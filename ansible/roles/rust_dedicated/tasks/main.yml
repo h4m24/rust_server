@@ -23,7 +23,7 @@
     locale_language: "{{ locale_status.stdout | regex_search('LANGUAGE=([^\n]+)', '\\1') | default([locale_lang], true) | first }}"
 
 - name: Configure locale to '{{ config_system_locale }}' and language to '{{ config_system_language }}'
-  become: yes
+  become: true
   command: localectl set-locale LANG={{ config_system_locale }} LANGUAGE={{ config_system_language }}
   changed_when: locale_lang != config_system_locale or locale_language != config_system_language
 
@@ -34,31 +34,31 @@
     update_cache: yes
 
 - name: Add i386 architecture
-  become: yes
+  become: true
   command: dpkg --add-architecture i386
 
 - name: Update apt cache
-  become: yes
+  become: true
   apt:
     update_cache: yes
 
 - name: Install lib32gcc1 package
-  become: yes
+  become: true
   apt:
     name: lib32gcc1
     state: present
 
 - name: Run dpkg-reconfigure (requires privilege escalation)
-  become: yes
+  become: true
   shell: dpkg-reconfigure debconf -f noninteractive -p critical && sudo dpkg --configure -a
 
 - name: steamcmd agreement
-  become: yes
+  become: true
   shell: |
     echo steam steam/question select "I AGREE" | sudo debconf-set-selections
     echo steam steam/license note '' | sudo debconf-set-selections
 - name: Install SteamCMD
-  become: yes
+  become: true
   apt:
     name: steamcmd
     state: present
