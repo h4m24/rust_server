@@ -1,0 +1,26 @@
+
+
+steamcmd_dir: /opt/steamcmd  # Installation directory
+steamcmd_user: steamcmd      # Dedicated user for SteamCMD
+rust_script_path: /home/steamcmd/rust_update.txt  # Adjust if needed
+rust_install_dir: /home/steamcmd/rustserver  # Default install directory
+config_system_locale: 'en_US.UTF-8'
+config_system_language: 'en_US.UTF-8'
+
+
+# Rust server configuration
+rust_server_ip: "0.0.0.0"
+rust_server_port: 28015
+rust_rcon_ip: "0.0.0.0"
+rust_rcon_port: 28016
+rust_rcon_password: "1234"
+rust_max_players: 75
+rust_server_hostname: "Chadz Server"
+rust_server_identity: "chadzserver"
+rust_server_seed: 12345
+rust_world_size: 1000
+rust_save_interval: 300
+rust_global_chat: true
+rust_description: "Description Here"
+rust_header_image: "512x256px JPG/PNG headerimage link here"
+rust_website: "Website Here"

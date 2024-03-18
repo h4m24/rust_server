@@ -1,0 +1,194 @@
+
+- name: Ensure localisation files for '{{ config_system_locale }}' are available
+  locale_gen:
+    name: "{{ config_system_locale }}"
+    state: present
+
+- name: Ensure localisation files for '{{ config_system_language }}' are available
+  locale_gen:
+    name: "{{ config_system_language }}"
+    state: present
+
+- name: Get current locale and language configuration
+  command: localectl status
+  register: locale_status
+  changed_when: false
+
+- name: Parse 'LANG' from current locale and language configuration
+  set_fact:
+    locale_lang: "{{ locale_status.stdout | regex_search('LANG=([^\n]+)', '\\1') | first }}"
+
+- name: Parse 'LANGUAGE' from current locale and language configuration
+  set_fact:
+    locale_language: "{{ locale_status.stdout | regex_search('LANGUAGE=([^\n]+)', '\\1') | default([locale_lang], true) | first }}"
+
+- name: Configure locale to '{{ config_system_locale }}' and language to '{{ config_system_language }}'
+  become: yes
+  command: localectl set-locale LANG={{ config_system_locale }} LANGUAGE={{ config_system_language }}
+  changed_when: locale_lang != config_system_locale or locale_language != config_system_language
+
+- name: Add Ubuntu multiverse repository
+  apt_repository:
+    repo: 'deb http://archive.ubuntu.com/ubuntu focal multiverse'
+    state: present
+    update_cache: yes
+
+- name: Add i386 architecture
+  become: yes
+  command: dpkg --add-architecture i386
+
+- name: Update apt cache
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: Install lib32gcc1 package
+  become: yes
+  apt:
+    name: lib32gcc1
+    state: present
+
+- name: Run dpkg-reconfigure (requires privilege escalation)
+  become: yes
+  shell: dpkg-reconfigure debconf -f noninteractive -p critical && sudo dpkg --configure -a
+
+- name: steamcmd agreement
+  become: yes
+  shell: |
+    echo steam steam/question select "I AGREE" | sudo debconf-set-selections
+    echo steam steam/license note '' | sudo debconf-set-selections
+- name: Install SteamCMD
+  become: yes
+  apt:
+    name: steamcmd
+    state: present
+    # force_apt_get: yes
+    # dpkg_options: 'force-confdef,force-confold'
+
+- name: Create SteamCMD user
+  user:
+    name: "{{ steamcmd_user }}"
+    state: present
+
+- name: Create SteamCMD directory
+  file:
+    path: "{{ steamcmd_dir }}"
+    state: directory
+    owner: "{{ steamcmd_user }}"
+    group: "{{ steamcmd_user }}"
+
+- name: Download SteamCMD
+  get_url:
+    url: https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+    dest: "{{ steamcmd_dir }}/steamcmd_linux.tar.gz"
+
+- name: Extract SteamCMD archive
+  unarchive:
+    src: "{{ steamcmd_dir }}/steamcmd_linux.tar.gz"
+    dest: "{{ steamcmd_dir }}"
+    remote_src: yes
+
+- name: Ensure SteamCMD script is executable
+  file:
+    path: "{{ steamcmd_dir }}/steamcmd.sh"
+    mode: 0755
+
+- name: Create Rust update script
+  copy:
+    content: |
+      force_install_dir "{{ rust_install_dir }}"  # Using the variable
+      login anonymous
+      app_update 258550
+      quit
+    dest: "{{ rust_script_path }}"
+    mode: 0755 
+
+- name: Execute Rust update script via SteamCMD
+  shell: "/usr/games/steamcmd +runscript {{ rust_script_path }}"
+
+- name: Create startust.sh file
+  copy:
+    dest: "{{rust_install_dir}}/startrust.sh"
+    mode: 0755
+    content: |
+      #!/bin/sh
+      clear while : do
+        exec ./RustDedicated -batchmode -nographics \
+        -server.ip {{ rust_server_ip }} \
+        -server.port {{ rust_server_port }} \
+        -rcon.ip {{ rust_rcon_ip }} \
+        -rcon.port {{ rust_rcon_port }} \
+        -rcon.password "{{ rust_rcon_password }}" \
+        -server.maxplayers {{ rust_max_players }} \
+        -server.hostname "{{ rust_server_hostname }}" \
+        -server.identity "{{ rust_server_identity }}" \
+        -server.level "Procedural Map" \
+        -server.seed {{ rust_server_seed }} \
+        -server.worldsize {{ rust_world_size }} \
+        -server.saveinterval {{ rust_save_interval }} \
+        -server.globalchat {{ rust_global_chat }} \
+        -server.description "{{ rust_description }}" \
+        -server.headerimage "{{ rust_header_image }}" \
+        -server.url "{{ rust_website }}"
+        echo "\nRestarting server...\n" done
+
+- name: Install iptables-persistent (if necessary)
+  apt: 
+    name: iptables-persistent
+    state: present
+    update_cache: yes  # Ensure package lists are updated
+
+- name: Flush existing iptables rules
+  shell: iptables -F
+
+- name: Set default INPUT and OUTPUT policies to ACCEPT
+  shell: |
+    iptables -P INPUT ACCEPT
+    iptables -P OUTPUT ACCEPT
+
+- name: Allow established and related connections
+  shell: iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+- name: Allow incoming SSH connections (port 22)
+  shell: iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+- name: Allow incoming Rust server connections
+  shell: |
+    iptables -A INPUT -p tcp --dport 28016 -j ACCEPT
+    iptables -A INPUT -p udp --dport 28015 -j ACCEPT
+
+- name: Allow loopback interface
+  shell: iptables -A INPUT -i lo -j ACCEPT
+
+- name: Set default policy to DROP 
+  shell: iptables -A INPUT -j DROP
+
+# performance tuning
+- name: Set vm.swappiness to 10
+  sysctl:
+    name: vm.swappiness
+    value: 10
+    state: present
+    reload: yes 
+
+- name: Increase file descriptor limits
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: '* soft nofile 65536'
+    create: yes
+# doesnt work
+# - name: Set CPU governor to performance 
+#   shell: cpupower frequency-set -g performance
+
+
+- name: Optimize network settings
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes 
+  with_dict:
+    net.core.rmem_max: 16777216
+    net.core.wmem_max: 16777216
+    net.ipv4.tcp_rmem: 4096 87380 16777216
+    net.ipv4.tcp_wmem: 4096 65536 16777216
