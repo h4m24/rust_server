@@ -1,9 +1,44 @@
 
 # performance tuning
+
+- name: Ensure swapfile does not already exist
+  stat:
+    path: "{{ swap_file_path }}"
+  register: swapfile_status
+
+- name: Create swapfile of specified size
+  command: "fallocate -l {{ swap_file_size }} {{ swap_file_path }}"
+  when: not swapfile_status.stat.exists
+
+- name: Set secure permissions on swapfile
+  file:
+    path: "{{ swap_file_path }}"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Format the swapfile
+  command: mkswap {{ swap_file_path }}
+
+- name: Enable the swapfile
+  command: swapon {{ swap_file_path }}
+
+- name: Make swap activation persistent across reboots
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ swap_file_path }} none swap sw 0 0"
+
+- name: Configure swapiness
+  sysctl:
+    name: vm.swappiness
+    value: "{{ swap_swappiness }}"
+    sysctl_set: yes  # Ensure immediate application of the setting
+    state: present  
+
 - name: Set vm.swappiness to 10
   sysctl:
     name: vm.swappiness
-    value: 10
+    value: '10'
     state: present
     reload: yes 
 

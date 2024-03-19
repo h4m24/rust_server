@@ -18,22 +18,21 @@
     mode: 0755
     content: |
       #!/bin/sh
-      clear while : do
-        exec ./RustDedicated -batchmode -nographics \
-        -server.ip {{ rust_server_ip }} \
-        -server.port {{ rust_server_port }} \
-        -rcon.ip {{ rust_rcon_ip }} \
-        -rcon.port {{ rust_rcon_port }} \
-        -rcon.password "{{ rust_rcon_password }}" \
-        -server.maxplayers {{ rust_max_players }} \
-        -server.hostname "{{ rust_server_hostname }}" \
-        -server.identity "{{ rust_server_identity }}" \
-        -server.level "Procedural Map" \
-        -server.seed {{ rust_server_seed }} \
-        -server.worldsize {{ rust_world_size }} \
-        -server.saveinterval {{ rust_save_interval }} \
-        -server.globalchat {{ rust_global_chat }} \
-        -server.description "{{ rust_description }}" \
-        -server.headerimage "{{ rust_header_image }}" \
-        -server.url "{{ rust_website }}"
-        echo "\nRestarting server...\n" done
+      clear 
+      while : do
+        exec ./RustDedicated -batchmode -nographics
+        +server.ip 0.0.0.0  \
+        +server.port 28015  \
+        +server.tickrate 10  \
+        +server.hostname "Your Server Name" \
+        +server.identity "your_server_identity" \
+        +server.seed 793197  \
+        +server.maxplayers 50  \
+        +server.worldsize 100  \
+        +server.saveinterval 600  \
+        +rcon.ip 0.0.0.0  \
+        +rcon.port 28016  \
+        +rcon.password "Your_Rcon_Password" \
+        -logfile "logfilename.log"  
+        echo "\nRestarting server...\n" 
+      done

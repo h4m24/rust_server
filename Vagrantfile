@@ -66,6 +66,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
     sudo apt-get install ansible -y
-    sudo ansible-playbook /ansible/playbook.yml
+    sudo ansible-playbook -i localhost -v /ansible/playbook.yml
   SHELL
 end
