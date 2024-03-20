@@ -4,3 +4,4 @@
 - import_tasks: prerequisutes.yml
 - import_tasks: steamcmd.yml
 - import_tasks: rust.yml
+- import_tasks: rcon.yml

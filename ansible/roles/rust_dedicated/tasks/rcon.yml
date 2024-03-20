@@ -1,0 +1,54 @@
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: latest
+
+- name: Update npm
+  shell: npm update npm -g
+  args:
+    chdir: /opt  # Execute within /opt directory
+
+- name: Download rcon-web-admin
+  get_url:
+    url: https://codeload.github.com/brainfoolong/rcon-web-admin/zip/master
+    dest: /opt/rcon-web-admin.zip
+
+- name: Unzip rcon-web-admin
+  unarchive:
+    src: /opt/rcon-web-admin.zip
+    dest: /opt
+    remote_src: yes  # Indicates the zip file was downloaded
+
+# - name: Rename directory
+#   file:
+#     src: /opt/rcon-web-admin-master
+#     dest: /opt/rcon-web-admin
+#     state: directory
+
+- name: Rename directory
+  command: mv /opt/rcon-web-admin-master /opt/rcon-web-admin
+  args:
+    creates: /path/to/bar 
+
+- name: Install dependencies (npm install)
+  shell: npm install
+  args:
+    chdir: /opt/rcon-web-admin  
+
+- name: Install Core Widgets
+  shell: node src/main.js install-core-widgets
+  args:
+    chdir: /opt/rcon-web-admin  
+
+- name: Set permissions
+  file:
+    path: /opt/rcon-web-admin/startscripts
+    recurse: yes
+    mode: 0755
+
+- name: Start rcon-web-admin
+  shell: sh startscripts/start-linux.sh start 
+  args:
+    chdir: /opt/rcon-web-admin  

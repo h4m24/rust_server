@@ -18,9 +18,11 @@
     mode: 0755
     content: |
       #!/bin/sh
-      clear 
-      while : do
-        exec ./RustDedicated -batchmode -nographics
+
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`dirname $0`/RustDedicated_Data/Plugins:`dirname $0`/RustDedicated_Data/Plugins/x86_64
+
+      while true;do
+        ./RustDedicated -batchmode -nographics \
         +server.ip 0.0.0.0  \
         +server.port 28015  \
         +server.tickrate 10  \
@@ -33,6 +35,6 @@
         +rcon.ip 0.0.0.0  \
         +rcon.port 28016  \
         +rcon.password "Your_Rcon_Password" \
+        +rcon.web 1 \
         -logfile "logfilename.log"  
-        echo "\nRestarting server...\n" 
       done

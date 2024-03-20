@@ -17,7 +17,11 @@
 - name: Install lib32gcc1 package
   become: true
   apt:
-    name: lib32gcc1
+    name: 
+      - lib32gcc1
+      - unzip
+      - net-tools
+      - htop
     state: present
 
 - name: Run dpkg-reconfigure (requires privilege escalation)
