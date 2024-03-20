@@ -21,12 +21,6 @@
     dest: /opt
     remote_src: yes  # Indicates the zip file was downloaded
 
-# - name: Rename directory
-#   file:
-#     src: /opt/rcon-web-admin-master
-#     dest: /opt/rcon-web-admin
-#     state: directory
-
 - name: Rename directory
   command: mv /opt/rcon-web-admin-master /opt/rcon-web-admin
   args:
